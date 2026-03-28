@@ -1,0 +1,106 @@
+<html>
+  <head>
+    <title>Simplified Crew Chief Reference</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <link rel="icon" type="image/x-icon" href="./icon.jpg">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="./manifest.json">
+
+    <script src="./three.js"></script>
+    <script src="./Loader.js"></script>
+    <script src="./Orbit.js"></script>
+    <script src="./script.js"></script>
+  </head>
+  <body>
+    <div id="blur-back"></div>
+    <div id="spacer"></div>
+    <!-- Fuel Load Calculator -->
+    <div class="item">
+      <h2>Fuel Load Calculator</h2>
+      <select id="config-select">
+        <option>Slick</option>
+        <option>Wing Tanks</option>
+        <option>Centerline</option>
+        <option>Wing Tanks + Centerline</option>
+      </select>
+      <select id="model-select">
+        <option>C Model</option>
+        <option>D Model</option>
+      </select>
+      <input type="number" id="total" placeholder="Amount on Totalizer">
+      <button onclick="fuelLoad()">Submit</button>
+
+      <p id="fuel-res"></p>
+    </div>
+
+    <!-- Julian Date -->
+    <div class="item">
+      <h3 id="julian"></h3>
+    </div>
+
+    <!-- Tools -->
+    <div class="item">
+      <h2>References</h2>
+      <button onclick="openPanelChart()">Panel Chart</button>
+      <button onclick="document.getElementById('IMDS').style.display='block'">IMDS Cheat Sheet</button>
+    </div>
+
+    <!-- IMDS cheat sheet -->
+    <div class="fullscreen" id="IMDS" style="padding: 16px; color: black; overflow-y: scroll; display: none">
+      <div id="spacer"></div>
+      <button onclick="document.getElementById('IMDS').style.display='none'" class="x-button">✕</button>
+      <h2>IMDS Cheat Sheet</h2>
+    </div>
+
+    <!-- Panel Sheet -->
+    <div id="panelChart" class="fullscreen" style="color: black; display: none">
+      <div id="loader-wrapper">
+        <p id="loader-status">0% Loaded</p>
+      </div>
+
+      <div class="top-bar" id="searchBarPanels">
+        <div id="spacer"></div>
+        <button onclick="document.getElementById('panelChart').style.display='none'" style="font-size: 15px; display: inline" class="x-button">✕</button>
+        <div id="clearWrapper" style="display: inline">
+          <input type="number" placeholder="Panel Number" id="searchPanel">
+          <button onclick="searchPanel()" id="panel-search-submit">Submit</button>
+        </div>
+      </div>
+
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <!-- Torque Converter -->
+    <div class="item">
+      <h3>Torque Converter</h3>
+      <br>
+      <canvas id="torqueCanvas"></canvas><br>
+      <input type="number" placeholder="Torque Wrench Length (IN)" id="tw-length">
+      <input type="number" placeholder="Extender Length (IN)" id="ex-length">
+      <input type="number" placeholder="Original Torage" id="origin-torque">
+      <select id="deg">
+        <option value="0">0deg</option>
+        <option value="1">45deg</option>
+        <option value="2">90deg</option>
+        <option value="3">135deg</option>
+        <option value="4">180deg</option>
+        <option value="5">225deg</option>
+        <option value="6">270deg</option>
+        <option value="7">315deg</option>
+      </select>
+      <button onclick="torqueSubmit()">Submit</button>
+      <p id="torqueRes"></p>
+    </div>
+
+    <!-- First load popup -->
+    <div class="popup item" id="first">
+      <h1>Welcome</h1>
+      <p>This is not to be used for any military related operations. If there are any inaccuracies, let me know as soon as possible.</p>
+      <button onclick="document.getElementById('first').style.display='none'; document.getElementById('blur-back').style.display='none'">Acknowledge</button>
+    </div>
+  </body>
+</html>
