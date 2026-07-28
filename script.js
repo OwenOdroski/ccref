@@ -321,7 +321,7 @@ function openPanelChart() {
 function switchView() {
   let button = document.getElementById('cockpit-button')
 
-  if(mode == 'cockpit') {
+  if(mode == 'panels') {
     // Switch to Cockpit view
     button.textContent = 'Panel Chart'
     mode = 'cockpit'
@@ -334,7 +334,7 @@ function switchView() {
     controls.target.copy(pos)
     controls.enableZoom = false
     controls.rotateSpeed = 1
-  } else if(mode == 'panels') {
+  } else if(mode == 'cockpit') {
     // Switch to panel Chart
     button.textContent = 'View Cockpit'
     mode = 'panels'
