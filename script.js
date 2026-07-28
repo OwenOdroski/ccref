@@ -5,8 +5,8 @@ let maxLoads = {
   "WingTanks+Centerline": 14000
 }
 let newPanels = []
-let allPanels, scene, group, renderer, camera, animation
-let mode = 'view'
+let allPanels, scene, renderer, camera, animation, plane, cockpit, panelDesc
+let mode = 'panels'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -26,14 +26,37 @@ async function load() {
   let text = await json.json()
 
   allPanels = text.panels
+  cockPanels = text.cpPanels
+  panelDesc = text.panelData
 
-  for(let i in text.imds) {
-    let p = document.createElement('p')
+  let click
 
-    p.innerHTML = text.imds[i]
+  // Load all references
+  for(let i in text.ref) {
+    let p = document.createElement('button')
 
-    document.getElementById('IMDS').appendChild(p)
+    p.textContent = text.ref[i].name
+    p.style = "display: inline; margin: 4px"
+
+    p.onclick = function() {
+      let wrapper = document.getElementById('ref-list')
+      wrapper.innerHTML = ''
+
+      for(let x in text.ref[i].steps) {
+        let p = document.createElement('p')
+
+        p.innerHTML = text.ref[i].steps[x]
+
+        wrapper.appendChild(p)
+      }
+    }
+
+    document.getElementById('button-list').appendChild(p)
+    if(i == 0) click = p
   }
+
+  click.click()
+
   updateTorqueIn(0)
 
   let select = document.getElementById('deg')
@@ -108,7 +131,6 @@ function openPanelChart() {
   let c = document.querySelector('#canvas')
   let w = document.getElementById('loader-wrapper')
   let s = document.getElementById('loader-status')
-  let mode3 = 0
   canvas.style.display = 'block'
   w.style.display = 'block'
 
@@ -125,13 +147,55 @@ function openPanelChart() {
     light = new THREE.AmbientLight(0xffffff, 2.2);
     scene.add(light);
 
-    group = new THREE.Group()
+    plane = new THREE.Group()
+    cockpit = new THREE.Group()
+
+    scene.add(cockpit)
 
     const loader = new THREE.GLTFLoader();
 
+    loader.load('./cockpit.glb', (gltf) => {
+      gltf.scene.position.set(0, -20, 200)
+      gltf.scene.scale.set(8, 8, 8)
+      gltf.scene.rotation.x = Math.PI / -2
+      gltf.scene.rotation.z = Math.PI / -2
+      gltf.scene.children[0].children[9].visible = false
+      cockpit.visible = false
+
+      gltf.scene.traverse((obj) => {
+        if (obj.isMesh && obj.material) {
+          obj.material.side = THREE.DoubleSide;
+        }
+      });
+
+      // Add cockpit balls
+      for(let i = 0; i < cockPanels.length; i++) {
+        let mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(0.1, 15, 15),
+          new THREE.MeshBasicMaterial({color: 0xFF0000})
+        )
+        mesh.name = i
+        mesh.position.x = cockPanels[i].cords[0]
+        mesh.position.y = cockPanels[i].cords[1]
+        mesh.position.z = cockPanels[i].cords[2]
+        cockpit.add(mesh)
+      }
+
+      cockpit.add(gltf.scene)
+    }, (xhr) => {
+      let percent = (xhr.loaded / xhr.total * 100)
+      s.textContent = percent + '% loaded'
+      if(s.textContent == 'Infinity% loaded') {
+        s.textContent = '100% loaded'
+      }
+    },
+    (error) => {
+      console.error(error)
+      alert('Error loading Cockpit 3D model');
+    });
+
     loader.load('./f16.glb', (gltf) => {
-      mesh = gltf.scene
-      scene.add(gltf.scene)
+      plane.add(gltf.scene)
 
       w.style.display = 'none'
 
@@ -145,8 +209,8 @@ function openPanelChart() {
         }
       })
 
-      scene.add(group)
-      group.name = 'plane'
+      scene.add(plane)
+      plane.name = 'plane'
     }, (xhr) => {
       let percent = (xhr.loaded / xhr.total * 100)
       s.textContent = percent + '% loaded'
@@ -156,11 +220,11 @@ function openPanelChart() {
     },
     (error) => {
       console.error(error)
-      alert('Error loading 3D model');
+      alert('Error loading F-16 3D model');
     });
 
     // Load past points from localStorage
-    let value = allPanels//JSON.parse(localStorage.getItem('panels'))
+    let value = allPanels
 
     for(let i in value) {
       let mesh = new THREE.Mesh(
@@ -171,7 +235,7 @@ function openPanelChart() {
       mesh.position.x = value[i].cords[0]
       mesh.position.y = value[i].cords[1]
       mesh.position.z = value[i].cords[2]
-      group.add(mesh)
+      plane.add(mesh)
     }
 
     camera.position.set(100, 60, 100);
@@ -187,56 +251,101 @@ function openPanelChart() {
 
       raycaster.setFromCamera(pointer, camera);
 
-      // Replace `targetMesh` with the mesh you want to test against
-      if(mode == 'dev') {
-        const intersects = raycaster.intersectObject(scene, true);
+      let intersects = raycaster.intersectObject(scene, true);
 
-        if (intersects.length > 0) {
-          if(intersects[0].object.name[0] == 'O') {
-            let point = intersects[0].point;
-
-            let hit = intersects[0];
-            let vec = hit.point
-
-            let mesh = new THREE.Mesh(
-              new THREE.SphereGeometry(1, 15, 15),
-              new THREE.MeshBasicMaterial({color: 0xFF0000})
-            )
-            mesh.position.x = vec.x
-            mesh.position.y = vec.y
-            mesh.position.z = vec.z
-            scene.add(mesh)
-
-            let panelNumber = prompt("Panel Number")
-            let name = prompt("Panel Name")
-            let type = prompt("Panel or Door")
-
-            if(panelNumber == undefined || panelNumber == "") {
-              return
-            }
-
-            newPanels.push({cords: [vec.x, vec.y, vec.z], name: name, number: panelNumber, type: type})
-          } else {
-
-            alert(allPanels[JSON.parse(intersects[0].object.name)].number + '\n' + JSON.parse(intersects[0].object.name))
-          }
-        }
-      } else if(mode == 'view') {
-        let intersects = raycaster.intersectObject(scene, true);
-
-        if(intersects.length > 0) {
+      if(intersects.length > 0) {
+        if(mode == 'panels') {
           if(intersects[0].name != 'plane') {
             let panel = allPanels[intersects[0].object.name]
             alert(panel.type + ' Number: ' + panel.number)
           }
+        } else if(mode == 'cockpit') {
+          let format = (val) => { return Math.floor(val * 100) }
+          let panel = cockPanels[intersects[0].object.name]
+          document.getElementById('desccp').textContent = ''
+
+          if(panel != undefined) {
+            let wrapper = document.getElementById('cockpit-desc')
+            let ident = format(panel.cords[0]) + '/' + format(panel.cords[1]) + '/' + format(panel.cords[2])
+
+            wrapper.style.display = 'block'
+
+            document.getElementById('cpName').style = 'color: black'
+            document.getElementById('cpName').textContent = panel.title.toUpperCase()
+            document.getElementById('ident').style = 'color: black; font-size: 13px; margin-top: -16px'
+            document.getElementById('ident').textContent = ident
+
+            let note = document.getElementById('cockpit-note')
+
+            let retry = () => {
+              let desc = document.getElementById('cpDesc')
+              desc.innerHTML = ''
+
+              for(let i = 0; i < panelDesc[ident].length; i++) {
+                let curr = panelDesc[ident][i]
+
+                if(curr.type == 'tab') {
+                  let d = document.createElement('details')
+                  let s = document.createElement('summary')
+                  let p = document.createElement('p')
+
+                  s.textContent = curr.name.toUpperCase()
+                  p.textContent = curr.data.replace(/\n/g, "\n\n")
+
+                  s.style = 'color: black; font-size: 25px'
+                  p.style = "color: black"
+
+                  d.appendChild(s)
+                  d.appendChild(p)
+                  desc.appendChild(d)
+                } else {
+                  let d = document.getElementById('desccp')
+
+                  d.style = 'color: black'
+                  d.textContent = curr.data
+                }
+              }
+            }
+            retry()
+
+          }
         }
       }
-    });
+    })
   } else {
     s.style.display = 'none'
   }
   animate()
 }
+
+function switchView() {
+  let button = document.getElementById('cockpit-button')
+
+  if(mode == 'cockpit') {
+    // Switch to Cockpit view
+    button.textContent = 'Panel Chart'
+    mode = 'cockpit'
+    cockpit.visible = true
+    plane.visible = false
+
+    let pos = new THREE.Vector3(29, 0.5, 200)
+    camera.position.copy(pos)
+    camera.position.x -= 0.1
+    controls.target.copy(pos)
+    controls.enableZoom = false
+    controls.rotateSpeed = 1
+  } else if(mode == 'panels') {
+    // Switch to panel Chart
+    button.textContent = 'View Cockpit'
+    mode = 'panels'
+    camera.position.set(100, 60, 100);
+    cockpit.visible = false
+    plane.visible = true
+    controls.target.set(0, 0, 0)
+    controls.enableZoom = true
+  }
+}
+
 function animate() {
   animation = requestAnimationFrame(animate);
   controls.update();

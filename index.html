@@ -20,6 +20,11 @@
     <div id="spacer"></div>
     <!-- Fuel Load Calculator -->
     <div class="item">
+      <h1>WARNING</h1>
+      <p>This is a study guide built with publicly available sources. This does not supersede TOs and is not for operational use.</p>
+    </div>
+
+    <div class="item">
       <h2>Fuel Load Calculator</h2>
       <select id="config-select">
         <option>Slick</option>
@@ -46,14 +51,15 @@
     <div class="item">
       <h2>References</h2>
       <button onclick="openPanelChart()">Panel Chart</button>
-      <button onclick="document.getElementById('IMDS').style.display='block'">IMDS Cheat Sheet</button>
+      <button onclick="document.getElementById('IMDS').style.display='block'">References</button>
     </div>
 
     <!-- IMDS cheat sheet -->
     <div class="fullscreen" id="IMDS" style="padding: 16px; color: black; overflow-y: scroll; display: none">
       <div id="spacer"></div>
       <button onclick="document.getElementById('IMDS').style.display='none'" class="x-button">✕</button>
-      <h2>IMDS Cheat Sheet</h2>
+      <div id="button-list" style="width: 100%; overflow-x: auto; overflow-y: none; height: 70px; white-space: nowrap;"></div>
+      <div id="ref-list" style="white-space: pre-line;"></div>
     </div>
 
     <!-- Panel Sheet -->
@@ -69,6 +75,23 @@
           <input type="number" placeholder="Panel Number" id="searchPanel">
           <button onclick="searchPanel()" id="panel-search-submit">Submit</button>
         </div>
+      </div>
+
+      <!-- Center Wrapper -->
+      <div class="center">
+        <button id="cockpit-button" onclick="switchView()">View Cockpit</button>
+      </div>
+
+      <!-- Cockpit panel wrapper -->
+      <div id="cockpit-desc">
+        <div style="display: flex; width: 200px">
+          <button onclick="document.getElementById('cockpit-desc').style.display = 'none'" style="font-size: 15px; display: inline" class="x-button">✕</button>
+          <button id="cockpit-note" style="font-size: 15px; display: inline" class="x-button">✏️</button>
+        </div>
+        <h2 id="cpName"></h2>
+        <span id="ident"></span>
+        <p id="desccp"></p>
+        <div id="cpDesc"></div>
       </div>
 
       <canvas id="canvas"></canvas>
